@@ -1,0 +1,57 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ------------------------------------------------------------------
+   Sonder colour system — semantic tokens.
+   Light mode = default. Dark mode = `.dark` on <html>.
+   Sonder Blue (#355BFF -> 53 91 255) is the constant anchor in both.
+   ------------------------------------------------------------------ */
+:root {
+  --c-bg: 250 246 244;        /* #FAF6F4 warm off-white */
+  --c-surface: 255 255 255;   /* cards sit slightly above bg */
+  --c-accent: 53 91 255;      /* #355BFF Sonder Blue */
+  --c-accent-fill: 184 206 255; /* #B8CEFF light accent fill */
+  --c-divider: 185 192 204;   /* #B9C0CC */
+  --c-body: 48 70 104;        /* #304668 */
+  --c-muted: 124 140 166;     /* softened body for helper text */
+}
+
+.dark {
+  --c-bg: 15 26 46;           /* #0F1A2E */
+  --c-surface: 26 39 64;      /* #1A2740 */
+  --c-accent: 53 91 255;      /* #355BFF unchanged */
+  --c-accent-fill: 30 48 107; /* #1E306B */
+  --c-divider: 44 61 85;      /* #2C3D55 */
+  --c-body: 200 212 232;      /* #C8D4E8 */
+  --c-muted: 138 154 180;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background-color: rgb(var(--c-bg));
+  color: rgb(var(--c-body));
+  font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Honour a saved/system preference before React mounts to avoid flash.
+   The actual toggle logic lives in ThemeProvider. */
+input,
+textarea,
+button {
+  font-family: inherit;
+}
+
+/* Subtle focus ring in Sonder Blue */
+*:focus-visible {
+  outline: 2px solid rgb(var(--c-accent));
+  outline-offset: 2px;
+}
