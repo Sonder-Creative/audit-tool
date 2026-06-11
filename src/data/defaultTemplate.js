@@ -25,9 +25,10 @@ const q = (id, text, hint, inv = false) => ({
 })
 
 export const AUDIT_TYPES = [
-  { id: 'brand', label: 'Brand Health Review' },
-  { id: 'website', label: 'Website Performance Review' },
-  { id: 'marketing', label: 'Digital Marketing Assessment' },
+  { id: 'brand', label: 'Brand Health Review', short: 'Brand', icon: 'sparkles' },
+  { id: 'website', label: 'Website Performance Review', short: 'Website', icon: 'monitor' },
+  { id: 'marketing', label: 'Digital Marketing Assessment', short: 'Marketing', icon: 'megaphone' },
+  { id: 'growth', label: 'Growth Audit', short: 'Growth', icon: 'layers' },
 ]
 
 export const SCALE = {
@@ -426,6 +427,47 @@ export const defaultTemplate = {
       ],
     },
   },
+}
+
+// ---------------------------------------------------------------------------
+// Growth Audit = the complete picture: brand + website + marketing reviewed in
+// one pass. Built from the other three types so it always stays in sync with
+// their content, but with its own `g-` prefixed ids so editing/scoring a Growth
+// question is independent of the standalone audits. Each section carries a
+// `group` label so the UI can show which pillar it belongs to.
+// ---------------------------------------------------------------------------
+function buildGrowthType(tpl) {
+  const deep = (o) => JSON.parse(JSON.stringify(o))
+  const sources = ['brand', 'website', 'marketing']
+  const sections = []
+  for (const key of sources) {
+    const t = tpl.types[key]
+    for (const s of t.sections) {
+      const cs = deep(s)
+      cs.id = `g-${cs.id}`
+      cs.group = t.label
+      cs.questions = cs.questions.map((qn) => ({ ...qn, id: `g-${qn.id}` }))
+      sections.push(cs)
+    }
+  }
+  return {
+    id: 'growth',
+    label: 'Growth Audit',
+    intro:
+      'The complete picture: brand, website, and digital marketing reviewed together in one pass. Use this when a client needs everything assessed at once.',
+    sections,
+  }
+}
+
+defaultTemplate.types.growth = buildGrowthType(defaultTemplate)
+
+// Used when loading a base template from the blob that predates the Growth type:
+// derive it from the loaded brand/website/marketing sets so the tab always works.
+export function ensureGrowth(template) {
+  if (template && template.types && !template.types.growth) {
+    template.types.growth = buildGrowthType(template)
+  }
+  return template
 }
 
 export default defaultTemplate

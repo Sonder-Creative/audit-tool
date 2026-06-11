@@ -1,5 +1,7 @@
 import { useState } from 'react'
+import { Plus } from 'lucide-react'
 import Question from './Question.jsx'
+import AutoTextarea from './AutoTextarea.jsx'
 import { sectionScore, band } from '../lib/scoring.js'
 
 // One audit section: heading, its questions, an add-question form, and an
@@ -32,19 +34,16 @@ export default function Section({
     setAdding(false)
   }
 
-  // Global question numbering across the audit is handled by the parent via
-  // `baseIndex`; here we just number within fallback. Parent passes explicit
-  // indices through children to keep continuous numbering.
   return (
-    <section className="space-y-4">
-      <div className="flex items-baseline gap-3 border-b border-divider pb-2">
-        <span className="text-sm font-semibold text-accent">
+    <section className="space-y-5">
+      <div className="flex items-baseline gap-3">
+        <span className="text-sm font-semibold tabular-nums text-accent">
           {String(number).padStart(2, '0')}
         </span>
-        <h3 className="text-lg font-semibold text-body">{section.name}</h3>
+        <h3 className="text-xl font-semibold tracking-tight text-body">{section.name}</h3>
       </div>
 
-      <div className="space-y-3">
+      <div className="space-y-3.5">
         {section.questions.map((q, i) => (
           <Question
             key={q.id}
@@ -54,41 +53,39 @@ export default function Section({
             note={notes[q.id]}
             onScore={(v) => onScore(q.id, v)}
             onNote={(v) => onNote(q.id, v)}
-            onRequestEdit={(payload) =>
-              onRequestEdit(section.id, q.id, payload)
-            }
+            onRequestEdit={(payload) => onRequestEdit(section.id, q.id, payload)}
             onRequestDelete={() => onRequestDelete(section.id, q.id)}
           />
         ))}
       </div>
 
       {adding ? (
-        <div className="space-y-3 rounded-xl border border-dashed border-accent bg-accent-fill/30 p-4">
-          <textarea
+        <div className="space-y-3 rounded-2xl border border-dashed border-accent/70 bg-accent-fill/20 p-4">
+          <AutoTextarea
             value={newText}
             onChange={(e) => setNewText(e.target.value)}
-            rows={2}
+            minRows={2}
             placeholder="New question text"
-            className="w-full resize-none rounded-lg border border-divider bg-bg px-3 py-2 text-body focus:border-accent"
+            className="w-full rounded-xl border border-divider/50 bg-bg px-3.5 py-2.5 text-body focus:border-accent"
           />
           <input
             value={newHint}
             onChange={(e) => setNewHint(e.target.value)}
             placeholder="Hint (optional)"
-            className="w-full rounded-lg border border-divider bg-bg px-3 py-2 text-sm text-body focus:border-accent"
+            className="w-full rounded-xl border border-divider/50 bg-bg px-3.5 py-2.5 text-sm text-body focus:border-accent"
           />
           <div className="flex gap-2">
             <button
               type="button"
               onClick={submitAdd}
-              className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white hover:opacity-90"
+              className="rounded-xl bg-accent px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
             >
               Add question
             </button>
             <button
               type="button"
               onClick={() => setAdding(false)}
-              className="rounded-lg border border-divider px-4 py-2 text-sm font-medium text-body hover:border-accent"
+              className="rounded-xl border border-divider/60 px-4 py-2 text-sm font-medium text-body hover:border-accent"
             >
               Cancel
             </button>
@@ -98,20 +95,21 @@ export default function Section({
         <button
           type="button"
           onClick={() => setAdding(true)}
-          className="text-sm font-medium text-accent hover:underline"
+          className="inline-flex items-center gap-1.5 text-sm font-medium text-accent hover:underline"
         >
-          + Add question
+          <Plus size={16} />
+          Add question
         </button>
       )}
 
       {/* Section summary */}
-      <div className="rounded-xl border border-divider bg-accent-fill/40 p-4">
+      <div className="rounded-2xl border border-accent/20 bg-accent-fill/30 p-4 sm:p-5">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <span className="text-sm font-semibold uppercase tracking-wide text-body">
+          <span className="text-xs font-semibold uppercase tracking-wider text-body">
             Section summary
           </span>
-          <div className="flex items-center gap-2">
-            <span className="text-2xl font-bold text-accent">
+          <div className="flex items-baseline gap-1.5">
+            <span className="text-2xl font-bold tabular-nums text-accent">
               {score.average != null ? score.average.toFixed(1) : '—'}
             </span>
             <span className="text-sm text-muted">
@@ -126,12 +124,12 @@ export default function Section({
               }`
             : 'No questions scored yet'}
         </p>
-        <textarea
+        <AutoTextarea
           value={observation || ''}
           onChange={(e) => onObservation(e.target.value)}
-          rows={2}
+          minRows={2}
           placeholder="Overall section observation"
-          className="mt-3 w-full resize-y rounded-lg border border-divider bg-bg px-3 py-2 text-sm text-body placeholder:text-muted focus:border-accent"
+          className="mt-3 w-full rounded-xl border border-divider/50 bg-bg px-3.5 py-2.5 text-sm text-body placeholder:text-muted/70 focus:border-accent"
         />
       </div>
     </section>

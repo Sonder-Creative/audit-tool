@@ -1,12 +1,13 @@
-import { useEffect, useMemo, useState, useCallback } from 'react'
-import defaultTemplate, { AUDIT_TYPES } from './data/defaultTemplate.js'
+import { useEffect, useMemo, useState, useCallback, Fragment } from 'react'
+import defaultTemplate, { AUDIT_TYPES, ensureGrowth } from './data/defaultTemplate.js'
 import { fetchBaseTemplate, saveBaseTemplate } from './lib/api.js'
 import { applyOpToType, clone } from './lib/edits.js'
 import { downloadAudit, parseImport, readFileAsText } from './lib/fileIO.js'
 import { generatePrompt } from './lib/prompt.js'
 import { overallScore, band } from './lib/scoring.js'
 
-import Header from './components/Header.jsx'
+import Sidebar from './components/Sidebar.jsx'
+import TopBar from './components/TopBar.jsx'
 import Cover from './components/Cover.jsx'
 import Section from './components/Section.jsx'
 import SaveChoiceModal from './components/SaveChoiceModal.jsx'
@@ -18,13 +19,10 @@ import Toast from './components/Toast.jsx'
 const FIRST_TYPE = AUDIT_TYPES[0].id
 
 export default function App() {
-  // Base template = all three types. Starts from hardcoded default, may be
-  // replaced by the blob on load.
   const [baseTemplate, setBaseTemplate] = useState(() => clone(defaultTemplate))
   const [status, setStatus] = useState('loading')
 
   const [typeId, setTypeId] = useState(FIRST_TYPE)
-  // Working copy of the active type — carries any client-only edits.
   const [workingType, setWorkingType] = useState(() => clone(defaultTemplate.types[FIRST_TYPE]))
 
   const [answers, setAnswers] = useState({})
@@ -40,6 +38,7 @@ export default function App() {
   const [toast, setToast] = useState(null)
   const [confirm, setConfirm] = useState(null)
   const [prompt, setPrompt] = useState(null)
+  const [menuOpen, setMenuOpen] = useState(false)
 
   // ---- Load base template from blob on mount (fail soft) ------------------
   useEffect(() => {
@@ -48,9 +47,9 @@ export default function App() {
       const res = await fetchBaseTemplate()
       if (cancelled) return
       if (res.ok && res.template && res.template.types) {
-        setBaseTemplate(res.template)
-        // Refresh working copy only if the user hasn't started editing.
-        setWorkingType(clone(res.template.types[FIRST_TYPE] || defaultTemplate.types[FIRST_TYPE]))
+        const tmpl = ensureGrowth(res.template)
+        setBaseTemplate(tmpl)
+        setWorkingType(clone(tmpl.types[FIRST_TYPE] || defaultTemplate.types[FIRST_TYPE]))
         setStatus('live')
       } else {
         setStatus('fallback')
@@ -122,7 +121,6 @@ export default function App() {
     const res = await saveBaseTemplate(nextBase)
     setSavingBase(false)
 
-    // Always reflect the change in the current audit so the edit isn't lost.
     setWorkingType((t) => applyOpToType(t, op))
     setPendingEdit(null)
 
@@ -131,7 +129,6 @@ export default function App() {
       setStatus('live')
       showToast('Base template updated for all future audits', 'success')
     } else {
-      // Soft failure: keep the edit on this client and be honest about it.
       setDirty(true)
       showToast(
         res.error
@@ -153,6 +150,7 @@ export default function App() {
     setDirty(false)
   }
   const changeType = (newType) => {
+    setMenuOpen(false)
     if (newType === typeId) return
     if (dirty) {
       setConfirm({
@@ -181,6 +179,7 @@ export default function App() {
     setDirty(false)
   }
   const newAudit = () => {
+    setMenuOpen(false)
     if (dirty) {
       setConfirm({
         title: 'Start a new audit?',
@@ -198,6 +197,7 @@ export default function App() {
 
   // ---- Export / Import ----------------------------------------------------
   const handleExport = () => {
+    setMenuOpen(false)
     downloadAudit({ cover, answers, notes, observations }, workingType)
     setDirty(false)
     showToast('Audit exported', 'success')
@@ -224,6 +224,7 @@ export default function App() {
   }
 
   const handleImport = async (file) => {
+    setMenuOpen(false)
     let text
     try {
       text = await readFileAsText(file)
@@ -256,96 +257,122 @@ export default function App() {
     setPrompt(generatePrompt(workingType, { cover, answers, notes, observations }))
   }
 
-  const overall = useMemo(
-    () => overallScore(workingType, answers),
-    [workingType, answers]
-  )
+  const overall = useMemo(() => overallScore(workingType, answers), [workingType, answers])
+
+  // Precompute group labels (only the Growth audit uses them).
+  const rows = useMemo(() => {
+    let last = null
+    return workingType.sections.map((section, i) => {
+      const showGroup = section.group && section.group !== last
+      last = section.group
+      return { section, number: i + 1, group: showGroup ? section.group : null }
+    })
+  }, [workingType])
 
   return (
     <div className="min-h-full">
-      <Header
-        status={status}
+      <Sidebar
+        types={AUDIT_TYPES}
+        effectiveTypes={baseTemplate.types}
+        activeType={typeId}
+        onSelectType={changeType}
+        onNew={newAudit}
         onImport={handleImport}
         onExport={handleExport}
-        onNew={newAudit}
+        status={status}
         dirty={dirty}
+        open={menuOpen}
+        onClose={() => setMenuOpen(false)}
       />
 
-      <main className="mx-auto max-w-3xl px-4 py-6 sm:px-6 sm:py-8">
-        <div className="space-y-5">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight text-body">
-              {workingType.label}
-            </h1>
-            <p className="mt-1 max-w-prose text-sm text-muted">{workingType.intro}</p>
+      <div className="lg:pl-[264px]">
+        <TopBar title={workingType.label} onMenu={() => setMenuOpen(true)} />
+
+        <main className="dot-grid min-h-screen">
+          <div className="mx-auto max-w-3xl px-4 py-8 sm:px-8 sm:py-10">
+            <div className="space-y-6">
+              <div>
+                <h1 className="text-2xl font-bold tracking-tight text-body sm:text-3xl">
+                  {workingType.label}
+                </h1>
+                <p className="mt-2 max-w-prose text-sm leading-relaxed text-muted">
+                  {workingType.intro}
+                </p>
+              </div>
+
+              <RestoredBanner info={restored} onDismiss={() => setRestored(null)} />
+
+              <Cover cover={cover} onCover={updateCover} />
+
+              {/* Overall progress */}
+              <div className="card flex items-center justify-between px-5 py-4">
+                <span className="text-sm font-medium text-body">Overall score</span>
+                <span className="text-sm text-muted">
+                  {overall.average != null ? (
+                    <>
+                      <span className="text-lg font-bold tabular-nums text-accent">
+                        {overall.average.toFixed(1)}
+                      </span>{' '}
+                      / 5 · {band(overall.average)} · {overall.answered}/{overall.total} scored
+                    </>
+                  ) : (
+                    `0 / ${overall.total} scored`
+                  )}
+                </span>
+              </div>
+
+              {/* Sections */}
+              <div className="space-y-12 pt-2 sm:space-y-14">
+                {rows.map(({ section, number, group }) => (
+                  <Fragment key={section.id}>
+                    {group && (
+                      <div className="flex items-center gap-3 pt-2">
+                        <span className="text-xs font-semibold uppercase tracking-wider text-accent">
+                          {group}
+                        </span>
+                        <span className="h-px flex-1 bg-divider/50" />
+                      </div>
+                    )}
+                    <Section
+                      section={section}
+                      number={number}
+                      answers={answers}
+                      notes={notes}
+                      observation={observations[section.id]}
+                      onScore={setScore}
+                      onNote={setNote}
+                      onObservation={(v) => setObservation(section.id, v)}
+                      onRequestEdit={requestEdit}
+                      onRequestAdd={requestAdd}
+                      onRequestDelete={requestDelete}
+                    />
+                  </Fragment>
+                ))}
+              </div>
+
+              {/* Generate prompt */}
+              <div className="card mt-4 p-6 text-center sm:p-8">
+                <h2 className="text-lg font-semibold text-body">Findings brief</h2>
+                <p className="mx-auto mt-1.5 max-w-md text-sm leading-relaxed text-muted">
+                  Generate a copy-ready Claude prompt from this audit — scores, notes, and
+                  section summaries, in Sonder's voice.
+                </p>
+                <button
+                  type="button"
+                  onClick={openPrompt}
+                  className="mt-5 rounded-xl bg-accent px-6 py-3 text-sm font-semibold text-white shadow-card transition-opacity hover:opacity-90"
+                >
+                  Generate Claude prompt
+                </button>
+              </div>
+
+              <footer className="pb-12 pt-2 text-center text-xs text-muted">
+                Sonder Creative — internal audit tool
+              </footer>
+            </div>
           </div>
-
-          <RestoredBanner info={restored} onDismiss={() => setRestored(null)} />
-
-          <Cover
-            cover={cover}
-            typeId={typeId}
-            onCover={updateCover}
-            onChangeType={changeType}
-          />
-
-          {/* Overall progress chip */}
-          <div className="flex items-center justify-between rounded-xl border border-divider bg-surface/60 px-4 py-3">
-            <span className="text-sm font-medium text-body">Overall score</span>
-            <span className="text-sm text-muted">
-              {overall.average != null ? (
-                <>
-                  <span className="text-lg font-bold text-accent">
-                    {overall.average.toFixed(1)}
-                  </span>{' '}
-                  / 5 · {band(overall.average)} · {overall.answered}/{overall.total} scored
-                </>
-              ) : (
-                `0 / ${overall.total} scored`
-              )}
-            </span>
-          </div>
-
-          <div className="space-y-8">
-            {workingType.sections.map((section, i) => (
-              <Section
-                key={section.id}
-                section={section}
-                number={i + 1}
-                answers={answers}
-                notes={notes}
-                observation={observations[section.id]}
-                onScore={setScore}
-                onNote={setNote}
-                onObservation={(v) => setObservation(section.id, v)}
-                onRequestEdit={requestEdit}
-                onRequestAdd={requestAdd}
-                onRequestDelete={requestDelete}
-              />
-            ))}
-          </div>
-
-          {/* Generate prompt */}
-          <div className="rounded-2xl border border-divider bg-surface/60 p-5 text-center sm:p-6">
-            <h2 className="text-lg font-semibold text-body">Findings brief</h2>
-            <p className="mx-auto mt-1 max-w-md text-sm text-muted">
-              Generate a copy-ready Claude prompt from this audit — scores, notes, and
-              section summaries, in Sonder's voice.
-            </p>
-            <button
-              type="button"
-              onClick={openPrompt}
-              className="mt-4 rounded-xl bg-accent px-6 py-3 text-sm font-semibold text-white hover:opacity-90"
-            >
-              Generate Claude prompt
-            </button>
-          </div>
-
-          <footer className="pb-10 pt-2 text-center text-xs text-muted">
-            Sonder Creative — internal audit tool
-          </footer>
-        </div>
-      </main>
+        </main>
+      </div>
 
       <SaveChoiceModal
         pending={pendingEdit}

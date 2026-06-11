@@ -1,43 +1,26 @@
-import { AUDIT_TYPES } from '../data/defaultTemplate.js'
-
-// Cover fields: client, date, auditor, audit type.
-export default function Cover({ cover, typeId, onCover, onChangeType }) {
-  const field = (key, label, type = 'text') => (
+// Cover fields: client, date, auditor. Audit type now lives in the sidebar.
+export default function Cover({ cover, onCover }) {
+  const field = (key, label, type = 'text', placeholder = '') => (
     <label className="block">
-      <span className="mb-1 block text-xs font-medium uppercase tracking-wide text-muted">
+      <span className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-muted">
         {label}
       </span>
       <input
         type={type}
         value={cover[key] || ''}
+        placeholder={placeholder}
         onChange={(e) => onCover(key, e.target.value)}
-        className="w-full rounded-lg border border-divider bg-surface px-3 py-2 text-body focus:border-accent"
+        className="w-full rounded-xl border border-divider/50 bg-bg px-3.5 py-2.5 text-body placeholder:text-muted/70 transition-colors focus:border-accent"
       />
     </label>
   )
 
   return (
-    <div className="rounded-2xl border border-divider bg-surface/60 p-5 sm:p-6">
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        {field('client', 'Client name')}
+    <div className="card p-5 sm:p-6">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        {field('client', 'Client name', 'text', 'Acme Co')}
         {field('date', 'Date', 'date')}
-        {field('auditor', 'Auditor name')}
-        <label className="block">
-          <span className="mb-1 block text-xs font-medium uppercase tracking-wide text-muted">
-            Audit type
-          </span>
-          <select
-            value={typeId}
-            onChange={(e) => onChangeType(e.target.value)}
-            className="w-full rounded-lg border border-divider bg-surface px-3 py-2 text-body focus:border-accent"
-          >
-            {AUDIT_TYPES.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.label}
-              </option>
-            ))}
-          </select>
-        </label>
+        {field('auditor', 'Auditor name', 'text', 'Your name')}
       </div>
     </div>
   )

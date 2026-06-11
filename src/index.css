@@ -15,6 +15,8 @@
   --c-divider: 185 192 204;   /* #B9C0CC */
   --c-body: 48 70 104;        /* #304668 */
   --c-muted: 124 140 166;     /* softened body for helper text */
+  --c-dot: 48 70 104;         /* dot-grid colour (low alpha applied below) */
+  --c-dot-alpha: 0.10;
 }
 
 .dark {
@@ -25,6 +27,8 @@
   --c-divider: 44 61 85;      /* #2C3D55 */
   --c-body: 200 212 232;      /* #C8D4E8 */
   --c-muted: 138 154 180;
+  --c-dot: 200 212 232;
+  --c-dot-alpha: 0.06;
 }
 
 html,
@@ -54,4 +58,38 @@ button {
 *:focus-visible {
   outline: 2px solid rgb(var(--c-accent));
   outline-offset: 2px;
+}
+
+@layer components {
+  /* Soft, designerly card: faint border + gentle shadow. */
+  .card {
+    @apply rounded-2xl bg-surface shadow-card transition-shadow duration-200;
+    border: 1px solid rgb(var(--c-divider) / 0.45);
+  }
+  .card-quiet {
+    @apply rounded-2xl bg-surface;
+    border: 1px solid rgb(var(--c-divider) / 0.4);
+  }
+  /* Dot-grid surface for the audit area — ties into the new site design. */
+  .dot-grid {
+    background-image: radial-gradient(
+      rgb(var(--c-dot) / var(--c-dot-alpha)) 1px,
+      transparent 1px
+    );
+    background-size: 22px 22px;
+    background-position: -1px -1px;
+  }
+}
+
+/* Auto-growing textareas never show a scrollbar mid-grow. */
+textarea.autogrow {
+  overflow: hidden;
+  resize: none;
+}
+
+/* Honour reduced motion. */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition-duration: 0.01ms !important;
+  }
 }
