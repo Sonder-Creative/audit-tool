@@ -103,7 +103,7 @@ export default function Section({
       )}
 
       {/* Section summary */}
-      <div className="rounded-2xl border border-accent/20 bg-accent-fill/30 p-4 sm:p-5">
+      <div className="rounded-2xl bg-accent-fill/40 p-4 shadow-card sm:p-5">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <span className="text-xs font-semibold uppercase tracking-wider text-body">
             Section summary

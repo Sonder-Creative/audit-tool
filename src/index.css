@@ -61,14 +61,13 @@ button {
 }
 
 @layer components {
-  /* Soft, designerly card: faint border + gentle shadow. */
+  /* Borderless card: shape comes from the surface colour + a soft shadow.
+     (Dark mode reads via the lighter surface tone, since shadows recede.) */
   .card {
     @apply rounded-2xl bg-surface shadow-card transition-shadow duration-200;
-    border: 1px solid rgb(var(--c-divider) / 0.45);
   }
   .card-quiet {
     @apply rounded-2xl bg-surface;
-    border: 1px solid rgb(var(--c-divider) / 0.4);
   }
   /* Dot-grid surface for the audit area — ties into the new site design. */
   .dot-grid {

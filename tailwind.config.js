@@ -28,8 +28,9 @@ export default {
         },
       },
       boxShadow: {
-        card: '0 1px 2px rgb(15 26 46 / 0.04), 0 2px 8px rgb(15 26 46 / 0.05)',
-        'card-hover': '0 2px 4px rgb(15 26 46 / 0.06), 0 8px 24px rgb(15 26 46 / 0.08)',
+        card: '0 1px 2px rgb(15 26 46 / 0.05), 0 4px 14px rgb(15 26 46 / 0.07)',
+        'card-hover': '0 2px 6px rgb(15 26 46 / 0.08), 0 12px 30px rgb(15 26 46 / 0.12)',
+        badge: '0 2px 8px rgb(53 91 255 / 0.25)',
       },
       borderRadius: {
         '2xl': '1rem',

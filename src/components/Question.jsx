@@ -1,8 +1,7 @@
 import { useState } from 'react'
 import { Pencil, Trash2 } from 'lucide-react'
-import ScoreButtons from './ScoreButtons.jsx'
+import ScoreBadge from './ScoreBadge.jsx'
 import AutoTextarea from './AutoTextarea.jsx'
-import { SCALE } from '../data/defaultTemplate.js'
 
 // A single scored question with notes, plus inline editing of text/hint.
 export default function Question({
@@ -32,9 +31,9 @@ export default function Question({
     setEditing(false)
   }
 
-  return (
-    <div className="card p-4 hover:shadow-card-hover sm:p-5">
-      {editing ? (
+  if (editing) {
+    return (
+      <div className="card p-4 sm:p-5">
         <div className="space-y-3">
           <label className="block text-xs font-medium uppercase tracking-wide text-muted">
             Question
@@ -79,44 +78,43 @@ export default function Question({
             </button>
           </div>
         </div>
-      ) : (
-        <div className="space-y-3.5">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <p className="font-medium leading-snug text-body">
-                <span className="mr-2 text-muted tabular-nums">{index}.</span>
-                {question.text}
-              </p>
-              {question.hint && (
-                <p className="mt-1 text-sm text-muted">{question.hint}</p>
-              )}
-            </div>
-            <button
-              type="button"
-              onClick={startEdit}
-              aria-label="Edit question"
-              className="shrink-0 rounded-lg p-1.5 text-muted transition-colors hover:bg-accent-fill/40 hover:text-accent"
-            >
-              <Pencil size={15} />
-            </button>
-          </div>
+      </div>
+    )
+  }
 
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <ScoreButtons value={score} onChange={onScore} questionId={question.id} />
-            <span className="text-xs text-muted">
-              {SCALE.low} &nbsp;·&nbsp; {SCALE.high}
-            </span>
-          </div>
+  return (
+    <div className="card group relative p-4 transition-shadow hover:shadow-card-hover sm:p-5">
+      {/* Award-badge score control, top-right */}
+      <div className="absolute right-4 top-4">
+        <ScoreBadge value={score} onChange={onScore} />
+      </div>
 
-          <AutoTextarea
-            value={note || ''}
-            onChange={(e) => onNote(e.target.value)}
-            minRows={2}
-            placeholder="Notes — specific observations, examples, supporting context"
-            className="w-full rounded-xl border border-divider/50 bg-bg px-3.5 py-2.5 text-sm text-body placeholder:text-muted/70 transition-colors focus:border-accent"
-          />
-        </div>
-      )}
+      <div className="pr-14">
+        <p className="font-medium leading-snug text-body">
+          <span className="mr-2 text-muted tabular-nums">{index}.</span>
+          {question.text}
+        </p>
+        {question.hint && <p className="mt-1 text-sm text-muted">{question.hint}</p>}
+      </div>
+
+      <AutoTextarea
+        value={note || ''}
+        onChange={(e) => onNote(e.target.value)}
+        minRows={2}
+        placeholder="Notes — specific observations, examples, supporting context"
+        className="mt-4 w-full rounded-xl border border-divider/50 bg-bg px-3.5 py-2.5 text-sm text-body placeholder:text-muted/70 transition-colors focus:border-accent"
+      />
+
+      <div className="mt-2 flex justify-end">
+        <button
+          type="button"
+          onClick={startEdit}
+          className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs font-medium text-muted opacity-0 transition-opacity hover:text-accent focus-visible:opacity-100 group-hover:opacity-100"
+        >
+          <Pencil size={13} />
+          Edit
+        </button>
+      </div>
     </div>
   )
 }
